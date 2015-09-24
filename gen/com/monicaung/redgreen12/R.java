@@ -47,6 +47,7 @@ containing a value of this type.
         public static final int buttonStop=0x7f060006;
         public static final int front=0x7f060002;
         public static final int textStatus=0x7f060004;
+        public static final int textStatus2=0x7f060007;
     }
     public static final class layout {
         public static final int main_activity=0x7f030000;
