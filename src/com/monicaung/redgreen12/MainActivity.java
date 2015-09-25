@@ -33,10 +33,10 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	protected static final String TAG = "MainActivity";
 	private CameraBridgeViewBase openCvCameraView;
 	private Mat mRgba;
-	private double redThreshold = 50;
-	private double greenThreshold = 10;
+	private double redThreshold = 80;
+	private double greenThreshold = 5;
 	private double darknessThreshold = 80;
-	private double brightnessThreshold = 300;
+	private double brightnessThreshold = 400;
 	private int greenPixelCount=0;
 	private int redPixelCount=0;
 	double[] blackPix = {0,0,0,0};
@@ -129,7 +129,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
 		mRgba = inputFrame.rgba();
-
+		//Loop through each pixel and determine if it's red, green or other
 		int maxHeight = (int) (0.99*mRgba.size().height -1);
 		int maxWidth = (int) (0.99*mRgba.size().width -1);
 		for(int i=0; i<maxHeight; i++){
@@ -140,8 +140,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				double blue = data[2];
 				double magnitude = Math.sqrt(Math.pow(data[0],2) +Math.pow(data[1],2) + Math.pow(data[2],2));
 				//If pixel is to dark or too bright, blueish or yellow, set pixel to black
-				if( magnitude < darknessThreshold || magnitude > brightnessThreshold || (blue > red && (blue+30) > green) || Math.abs(red-green) < 130 ) {
-					mRgba.put(i,j, blackPix);
+				if( magnitude < darknessThreshold || magnitude > brightnessThreshold || (blue > red && (blue+50) > green) || Math.abs(red-green) < 30 ) {
+//					mRgba.put(i,j, blackPix);
 				} else {
 					if (red > green) {
 						if ((red-green) > redThreshold) {
