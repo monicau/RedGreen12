@@ -40,6 +40,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private int greenPixelCount=0;
 	private int redPixelCount=0;
 	double[] blackPix = {0,0,0,0};
+	private boolean isDetecting = false;
 	private boolean isMoving = false;
 	
 	@Override
@@ -69,6 +70,23 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			@Override
 			public void onClick(View v) {
 				sendToArduino("n");
+			}
+		});
+        
+        final Button buttonDetecting = (Button) findViewById(R.id.buttonDetecting);
+        buttonDetecting.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (!isDetecting) {
+					//Turn on
+					isDetecting = true;
+					buttonDetecting.setText("TURN OFF");
+					
+				} else {
+					//Turn off
+					isDetecting = false;
+					buttonDetecting.setText("TURN ON");
+				}
 			}
 		});
         
@@ -128,59 +146,60 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-		mRgba = inputFrame.rgba();
-		//Loop through each pixel and determine if it's red, green or other
-		int maxHeight = (int) (0.99*mRgba.size().height -1);
-		int maxWidth = (int) (0.99*mRgba.size().width -1);
-		for(int i=0; i<maxHeight; i++){
-			for(int j=0; j<maxWidth; j++){
-				double[] data = mRgba.get(i,j);
-				double red = data[0];
-				double green = data[1];
-				double blue = data[2];
-				double magnitude = Math.sqrt(Math.pow(data[0],2) +Math.pow(data[1],2) + Math.pow(data[2],2));
-				//If pixel is to dark or too bright, blueish or yellow, set pixel to black
-				if( magnitude < darknessThreshold || magnitude > brightnessThreshold || (blue > red && (blue+50) > green) || Math.abs(red-green) < 30 ) {
-//					mRgba.put(i,j, blackPix);
-				} else {
-					if (red > green) {
-						if ((red-green) > redThreshold) {
-							redPixelCount++;
-						}
+		if (isDetecting) {
+			mRgba = inputFrame.rgba();
+			//Loop through each pixel and determine if it's red, green or other
+			int maxHeight = (int) (0.99*mRgba.size().height -1);
+			int maxWidth = (int) (0.99*mRgba.size().width -1);
+			for(int i=0; i<maxHeight; i++){
+				for(int j=0; j<maxWidth; j++){
+					double[] data = mRgba.get(i,j);
+					double red = data[0];
+					double green = data[1];
+					double blue = data[2];
+					double magnitude = Math.sqrt(Math.pow(data[0],2) +Math.pow(data[1],2) + Math.pow(data[2],2));
+					//If pixel is to dark or too bright, blueish or yellow, set pixel to black
+					if( magnitude < darknessThreshold || magnitude > brightnessThreshold || (blue > red && (blue+50) > green) || Math.abs(red-green) < 30 ) {
+	//					mRgba.put(i,j, blackPix);
 					} else {
-						//green > red
-						if ((green-red)>greenThreshold) {
-							greenPixelCount++;
+						if (red > green) {
+							if ((red-green) > redThreshold) {
+								redPixelCount++;
+							}
+						} else {
+							//green > red
+							if ((green-red)>greenThreshold) {
+								greenPixelCount++;
+							}
 						}
 					}
 				}
 			}
-		}
-		double[] middlePixel = mRgba.get(mRgba.rows()/2, mRgba.cols()/2);
-		final String text = "R: " + middlePixel[0] + ", G: " + middlePixel[1] + ", B:" + middlePixel[2] + " \n "
-		+ " reds:" + redPixelCount + ", greens:" + greenPixelCount;
-		
-		runOnUiThread(new Runnable() {
-			@Override
-            public void run() {
-				textStatus2.setText(text);
-            }
-		});
-		
-		if (greenPixelCount > redPixelCount && greenPixelCount > 20) {
-			if (!isMoving) {
-				isMoving = true;
-				sendToArduino("y");
+			double[] middlePixel = mRgba.get(mRgba.rows()/2, mRgba.cols()/2);
+			final String text = "R: " + middlePixel[0] + ", G: " + middlePixel[1] + ", B:" + middlePixel[2] + " \n "
+			+ " reds:" + redPixelCount + ", greens:" + greenPixelCount;
+			
+			runOnUiThread(new Runnable() {
+				@Override
+	            public void run() {
+					textStatus2.setText(text);
+	            }
+			});
+			
+			if (greenPixelCount > redPixelCount && greenPixelCount > 20) {
+				if (!isMoving) {
+					isMoving = true;
+					sendToArduino("y");
+				}
+			} else {
+				if (isMoving) {
+					isMoving = false;
+					sendToArduino("n");
+				}
 			}
-		} else {
-			if (isMoving) {
-				isMoving = false;
-				sendToArduino("n");
-			}
+			redPixelCount=0;
+			greenPixelCount=0;
 		}
-		
-		redPixelCount=0;
-		greenPixelCount=0;
 		return mRgba;
 	}
 	

@@ -43,6 +43,7 @@ containing a value of this type.
         public static final int HelloOpenCvView=0x7f060003;
         public static final int any=0x7f060000;
         public static final int back=0x7f060001;
+        public static final int buttonDetecting=0x7f060008;
         public static final int buttonMove=0x7f060005;
         public static final int buttonStop=0x7f060006;
         public static final int front=0x7f060002;
