@@ -23,6 +23,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class MainActivity extends Activity implements CvCameraViewListener2 {
@@ -30,6 +31,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private Physicaloid physicaloid;
 	private TextView textStatus;
 	private TextView textStatus2;
+	private ImageView imagePope;
 	protected static final String TAG = "MainActivity";
 	private CameraBridgeViewBase openCvCameraView;
 	private Mat mRgba;
@@ -42,12 +44,15 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	double[] blackPix = {0,0,0,0};
 	private boolean isDetecting = false;
 	private boolean isMoving = false;
+	private int baseG=200;
+	private int baseR=240;
+	private double phi=5.67;
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-      //Set up the views
+        //Set up the views
         setContentView(R.layout.main_activity);
         
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -55,6 +60,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	    openCvCameraView.setVisibility(SurfaceView.VISIBLE);
 	    openCvCameraView.setCvCameraViewListener(this);
 	    openCvCameraView.setMaxFrameSize(200,  200);
+//	    imagePope.findViewById(R.id.imagePope);
+//	    imagePope.setVisibility(View.INVISIBLE);
 	    
         textStatus = (TextView) findViewById(R.id.textStatus);
         textStatus2 = (TextView) findViewById(R.id.textStatus2);
@@ -89,6 +96,19 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				}
 			}
 		});
+//        final Button buttonPope = (Button) findViewById(R.id.buttonPope);
+//        buttonPope.setOnClickListener(new View.OnClickListener() {
+//			@Override
+//			public void onClick(View v) {
+//				imagePope.setVisibility(View.VISIBLE);
+//				runOnUiThread(new Runnable() {
+//					@Override
+//		            public void run() {
+//						buttonPope.setText("Unpopeify");
+//		            }
+//				});
+//			}
+//		});
         
         //Set up physicaloid
         physicaloid = new Physicaloid(this);
@@ -149,32 +169,24 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		if (isDetecting) {
 			mRgba = inputFrame.rgba();
 			//Loop through each pixel and determine if it's red, green or other
-			int maxHeight = (int) (0.99*mRgba.size().height -1);
-			int maxWidth = (int) (0.99*mRgba.size().width -1);
+			int maxHeight = (int) (0.9999*mRgba.size().height -1);
+			int maxWidth = (int) (0.9999*mRgba.size().width -1);
 			for(int i=0; i<maxHeight; i++){
 				for(int j=0; j<maxWidth; j++){
 					double[] data = mRgba.get(i,j);
 					double red = data[0];
 					double green = data[1];
 					double blue = data[2];
-					double magnitude = Math.sqrt(Math.pow(data[0],2) +Math.pow(data[1],2) + Math.pow(data[2],2));
-					//If pixel is to dark or too bright, blueish or yellow, set pixel to black
-					if( magnitude < darknessThreshold || magnitude > brightnessThreshold || (blue > red && (blue+50) > green) || Math.abs(red-green) < 30 ) {
-	//					mRgba.put(i,j, blackPix);
-					} else {
+					if(Math.sqrt(Math.pow(blue, 2) + Math.pow(red, 2)) < phi*(green-baseG) || Math.sqrt(Math.pow(blue, 2) + Math.pow(green, 2)) < phi*(red-baseR)){
 						if (red > green) {
-							if ((red-green) > redThreshold) {
-								redPixelCount++;
-							}
-						} else {
-							//green > red
-							if ((green-red)>greenThreshold) {
-								greenPixelCount++;
-							}
+							redPixelCount++;
+						} else{
+							greenPixelCount++;
 						}
 					}
 				}
 			}
+				
 			double[] middlePixel = mRgba.get(mRgba.rows()/2, mRgba.cols()/2);
 			final String text = "R: " + middlePixel[0] + ", G: " + middlePixel[1] + ", B:" + middlePixel[2] + " \n "
 			+ " reds:" + redPixelCount + ", greens:" + greenPixelCount;
@@ -186,7 +198,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	            }
 			});
 			
-			if (greenPixelCount > redPixelCount && greenPixelCount > 20) {
+			if (greenPixelCount > redPixelCount && greenPixelCount > 10) {
 				if (!isMoving) {
 					isMoving = true;
 					sendToArduino("y");
@@ -202,20 +214,20 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		}
 		return mRgba;
 	}
+		
 	
 	private void sendToArduino(String message) {
 		if(physicaloid.open()) {
 		    byte[] buf = message.getBytes();
 		    physicaloid.write(buf, buf.length);
 		    physicaloid.close();
-		    if (message.equals("y")) {
+		    if (message.equals("y") && isDetecting) {
 		    	runOnUiThread(new Runnable() {
 					@Override
 		            public void run() {
 						textStatus.setText("Move!");
 		            }
 				});
-		    	
 		    } else if (message.equals("n")) {
 		    	runOnUiThread(new Runnable() {
 					@Override
