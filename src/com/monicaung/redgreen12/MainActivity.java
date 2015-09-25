@@ -34,9 +34,13 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private CameraBridgeViewBase openCvCameraView;
 	private Mat mRgba;
 	private double redThreshold = 50;
-	private double greenThreshold = 20;
+	private double greenThreshold = 10;
+	private double darknessThreshold = 80;
+	private double brightnessThreshold = 300;
 	private int greenPixelCount=0;
 	private int redPixelCount=0;
+	double[] blackPix = {0,0,0,0};
+	private boolean isMoving = false;
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,19 +124,25 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
 		mRgba = inputFrame.rgba();
-//		Mat histogram = getHistogram(rgba);
-		//Loop through each pixel and determine if it's red, green or other
-		for (int i=0; i<mRgba.rows(); i++) {
-			for (int j=0; j<mRgba.cols(); j++) {
-				double[] data = mRgba.get(i,j); //grab the pixel at i,j
+
+		int maxHeight = (int) (0.99*mRgba.size().height -1);
+		int maxWidth = (int) (0.99*mRgba.size().width -1);
+		for(int i=0; i<maxHeight; i++){
+			for(int j=0; j<maxWidth; j++){
+				double[] data = mRgba.get(i,j);
 				double red = data[0];
 				double green = data[1];
 				double blue = data[2];
-				if (blue < red && blue < green) {
-					//If pixel isn't blueish continue on
+				double magnitude = Math.sqrt(Math.pow(data[0],2) +Math.pow(data[1],2) + Math.pow(data[2],2));
+				//If pixel is to dark or too bright, blueish or yellow, set pixel to black
+				if( magnitude < darknessThreshold || magnitude > brightnessThreshold || (blue > red && (blue+30) > green) || Math.abs(red-green) < 130 ) {
+					mRgba.put(i,j, blackPix);
+				} else {
 					if (red > green) {
 						if ((red-green) > redThreshold) {
 							redPixelCount++;
@@ -146,7 +156,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				}
 			}
 		}
-
 		double[] middlePixel = mRgba.get(mRgba.rows()/2, mRgba.cols()/2);
 		final String text = "R: " + middlePixel[0] + ", G: " + middlePixel[1] + ", B:" + middlePixel[2] + " \n "
 		+ " reds:" + redPixelCount + ", greens:" + greenPixelCount;
@@ -157,25 +166,23 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				textStatus2.setText(text);
             }
 		});
+		
+		if (greenPixelCount > redPixelCount && greenPixelCount > 20) {
+			if (!isMoving) {
+				isMoving = true;
+				sendToArduino("y");
+			}
+		} else {
+			if (isMoving) {
+				isMoving = false;
+				sendToArduino("n");
+			}
+		}
+		
 		redPixelCount=0;
 		greenPixelCount=0;
 		return mRgba;
 	}
-	
-//	private Mat getHistogram(Mat mat) {
-//		ArrayList<Mat> matList = new ArrayList<Mat>();
-//		matList.add(mat);
-//		int channelArray[] = {0,1,2};
-////		int channelArray[] = {0};
-//		MatOfInt channels = new MatOfInt(channelArray);
-//		Mat hist = new Mat();
-//		MatOfInt histSize = new MatOfInt(64,64,64);
-////		MatOfInt histSize = new MatOfInt(256);
-//		MatOfFloat ranges = new MatOfFloat(0.0f, 255.0f, 0.0f, 255.0f, 0.0f, 255.0f);
-////		MatOfFloat ranges = new MatOfFloat(0,0f, 255.0f);
-//		Imgproc.calcHist(matList, channels, new Mat(), hist, histSize, ranges);
-//		return hist;
-//	}
 	
 	private void sendToArduino(String message) {
 		if(physicaloid.open()) {
@@ -183,12 +190,28 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		    physicaloid.write(buf, buf.length);
 		    physicaloid.close();
 		    if (message.equals("y")) {
-		    	textStatus.setText("Move!");
+		    	runOnUiThread(new Runnable() {
+					@Override
+		            public void run() {
+						textStatus.setText("Move!");
+		            }
+				});
+		    	
 		    } else if (message.equals("n")) {
-		    	textStatus.setText("Stop!");
+		    	runOnUiThread(new Runnable() {
+					@Override
+		            public void run() {
+						textStatus.setText("Stop!");
+		            }
+				});
 		    }
 		} else {
-			textStatus.setText("Failed to send! :(");
+			runOnUiThread(new Runnable() {
+				@Override
+	            public void run() {
+					textStatus.setText("Failed to send! :(");
+	            }
+			});
 		}
 	}
 }
