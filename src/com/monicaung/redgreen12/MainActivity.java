@@ -8,6 +8,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
@@ -31,7 +32,11 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private TextView textStatus2;
 	protected static final String TAG = "MainActivity";
 	private CameraBridgeViewBase openCvCameraView;
-	private Mat rgba;
+	private Mat mRgba;
+	private double redThreshold = 50;
+	private double greenThreshold = 20;
+	private int greenPixelCount=0;
+	private int redPixelCount=0;
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +49,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		openCvCameraView = (CameraBridgeViewBase) findViewById(R.id.HelloOpenCvView);
 	    openCvCameraView.setVisibility(SurfaceView.VISIBLE);
 	    openCvCameraView.setCvCameraViewListener(this);
-	     
+	    openCvCameraView.setMaxFrameSize(200,  200);
+	    
         textStatus = (TextView) findViewById(R.id.textStatus);
         textStatus2 = (TextView) findViewById(R.id.textStatus2);
         Button buttonMove = (Button) findViewById(R.id.buttonMove);
@@ -64,7 +70,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         
         //Set up physicaloid
         physicaloid = new Physicaloid(this);
-//      physicaloid.upload(Boards.ARDUINO_UNO, "/storage/emulated/0/Download/Blink.hex");
        
 	}
 	
@@ -117,18 +122,42 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	}
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-		rgba = inputFrame.rgba();
+		mRgba = inputFrame.rgba();
 //		Mat histogram = getHistogram(rgba);
-		double[] data = rgba.get(0,0);
-		
-		final String text = "R: " + data[0] + ", G: " + data[1] + ", B:" + data[2] + ", ??:" + data[3];
+		//Loop through each pixel and determine if it's red, green or other
+		for (int i=0; i<mRgba.rows(); i++) {
+			for (int j=0; j<mRgba.cols(); j++) {
+				double[] data = mRgba.get(i,j); //grab the pixel at i,j
+				double red = data[0];
+				double green = data[1];
+				double blue = data[2];
+				if (blue < red && blue < green) {
+					//If pixel isn't blueish continue on
+					if (red > green) {
+						if ((red-green) > redThreshold) {
+							redPixelCount++;
+						}
+					} else {
+						//green > red
+						if ((green-red)>greenThreshold) {
+							greenPixelCount++;
+						}
+					}
+				}
+			}
+		}
+		final String text = "red:" + redPixelCount + ", green:" + greenPixelCount;
+//		final String text = "R: " + data[0] + ", G: " + data[1] + ", B:" + data[2] + ", ??:" + data[3];
+
 		runOnUiThread(new Runnable() {
 			@Override
             public void run() {
 				textStatus2.setText(text);
             }
 		});
-		return rgba;
+		redPixelCount=0;
+		greenPixelCount=0;
+		return mRgba;
 	}
 	
 //	private Mat getHistogram(Mat mat) {
