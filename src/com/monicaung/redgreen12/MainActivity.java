@@ -146,9 +146,11 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				}
 			}
 		}
-		final String text = "red:" + redPixelCount + ", green:" + greenPixelCount;
-//		final String text = "R: " + data[0] + ", G: " + data[1] + ", B:" + data[2] + ", ??:" + data[3];
 
+		double[] middlePixel = mRgba.get(mRgba.rows()/2, mRgba.cols()/2);
+		final String text = "R: " + middlePixel[0] + ", G: " + middlePixel[1] + ", B:" + middlePixel[2] + " \n "
+		+ " reds:" + redPixelCount + ", greens:" + greenPixelCount;
+		
 		runOnUiThread(new Runnable() {
 			@Override
             public void run() {
