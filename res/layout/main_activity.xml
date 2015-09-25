@@ -59,6 +59,21 @@
         android:layout_alignParentTop="true"
         android:text="TURN ON" />
 
+    <ImageView
+        android:id="@+id/imagePope"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/popefrancis"
+        android:visibility="gone" />
 
+    <Button
+        android:id="@+id/buttonPope"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:text="Popeify" />
 
 </RelativeLayout>
