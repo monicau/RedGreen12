@@ -61,7 +61,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	    openCvCameraView.setVisibility(SurfaceView.VISIBLE);
 	    openCvCameraView.setCvCameraViewListener(this);
 	    openCvCameraView.setMaxFrameSize(200,  200);
-//	    imagePope.findViewById(R.id.imagePope);
+	    imagePope = (ImageView) findViewById(R.id.imagePope);
+	    imagePope.setVisibility(View.INVISIBLE);
 	    
         textStatus = (TextView) findViewById(R.id.textStatus);
         textStatus2 = (TextView) findViewById(R.id.textStatus2);
@@ -96,31 +97,31 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				}
 			}
 		});
-//        final Button buttonPope = (Button) findViewById(R.id.buttonPope);
-//        buttonPope.setOnClickListener(new View.OnClickListener() {
-//			@Override
-//			public void onClick(View v) {
-//				if (!isPopePresent) {
-//					isPopePresent = true;
-//					imagePope.setVisibility(View.VISIBLE);
-//					runOnUiThread(new Runnable() {
-//						@Override
-//			            public void run() {
-//							buttonPope.setText("Unpopeify");
-//			            }
-//					});
-//				} else {
-//					isPopePresent = false;
-//					imagePope.setVisibility(View.INVISIBLE);
-//					runOnUiThread(new Runnable() {
-//						@Override
-//			            public void run() {
-//							buttonPope.setText("Popeify");
-//			            }
-//					});
-//				}
-//			}
-//		});
+        final Button buttonPope = (Button) findViewById(R.id.buttonPope);
+        buttonPope.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (!isPopePresent) {
+					isPopePresent = true;
+					imagePope.setVisibility(View.VISIBLE);
+					runOnUiThread(new Runnable() {
+						@Override
+			            public void run() {
+							buttonPope.setText("Unpopeify");
+			            }
+					});
+				} else {
+					isPopePresent = false;
+					imagePope.setVisibility(View.INVISIBLE);
+					runOnUiThread(new Runnable() {
+						@Override
+			            public void run() {
+							buttonPope.setText("Popeify");
+			            }
+					});
+				}
+			}
+		});
         
         //Set up physicaloid
         physicaloid = new Physicaloid(this);
