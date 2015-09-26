@@ -43,8 +43,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private int baseG = 200;
 	private int baseR = 220;
 	private double phi = 5.67;
-	private int RPC=0;
-	private int GPC=0;
+
 	private boolean goingState=false;
 	private boolean oldGoingState =false;
 	
@@ -142,8 +141,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		double[] blackPix = {0,0,0,0};
 
 
-		GPC = 0;
-		RPC = 0;
+		int RPC=0;
+		int GPC=0;
 		
 		int maxHeight = (int) (0.9999*rgba.size().height -1);
 		int maxWidth = (int) (0.9999*rgba.size().width -1);
@@ -171,11 +170,19 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			goingState= true;
 		}	
 		if(goingState != oldGoingState){
-			if(goingState = true)
+			oldGoingState = goingState;
+			if(goingState)
 				sendToArduino("y");
 			else sendToArduino("n");
-			oldGoingState = goingState;
+			
 		}
+		
+    	runOnUiThread(new Runnable() {
+			@Override
+            public void run() {
+				textStatus.setText(oldGoingState + "_+_" + goingState);
+            }
+		});
 		
 		
 
